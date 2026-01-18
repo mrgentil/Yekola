@@ -34,14 +34,14 @@ const SignUp = () => {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError('Les mots de passe ne correspondent pas')
       setLoading(false)
       return
     }
 
     // Validate password strength
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
+      setError('Le mot de passe doit contenir au moins 8 caractères')
       setLoading(false)
       return
     }
@@ -59,14 +59,14 @@ const SignUp = () => {
       if (error) {
         setError(error.message)
       } else {
-        setSuccess('Account created successfully! Please check your email to verify your account.')
+        setSuccess('Compte créé avec succès ! Veuillez vérifier votre email pour activer votre compte.')
         // Optionally redirect to sign in page after a delay
         setTimeout(() => {
           navigate('/signin')
         }, 3000)
       }
     } catch (err) {
-      setError('An error occurred during sign up')
+      setError('Une erreur est survenue lors de l\'inscription')
     } finally {
       setLoading(false)
     }
@@ -78,14 +78,14 @@ const SignUp = () => {
         <div>
           <div className="text-center mb-4">
             <a href="/" className="text-indigo-600 hover:text-indigo-500 text-sm">
-              ← Back to Home
+              ← Retour à l'accueil
             </a>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+            Créer votre compte
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join LearnHub and start your learning journey
+            Rejoignez LearnHub et commencez votre parcours d'apprentissage
           </p>
         </div>
         
@@ -95,7 +95,7 @@ const SignUp = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name
+                  Prénom
                 </label>
                 <input
                   id="firstName"
@@ -103,14 +103,14 @@ const SignUp = () => {
                   type="text"
                   required
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="First Name"
+                  placeholder="Prénom"
                   value={formData.firstName}
                   onChange={handleChange}
                 />
               </div>
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name
+                  Nom
                 </label>
                 <input
                   id="lastName"
@@ -118,7 +118,7 @@ const SignUp = () => {
                   type="text"
                   required
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Last Name"
+                  placeholder="Nom"
                   value={formData.lastName}
                   onChange={handleChange}
                 />
@@ -128,7 +128,7 @@ const SignUp = () => {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Adresse email
               </label>
               <input
                 id="email"
@@ -137,7 +137,7 @@ const SignUp = () => {
                 autoComplete="email"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder="Adresse email"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -146,14 +146,14 @@ const SignUp = () => {
             {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number (Optional)
+                Numéro de téléphone (Optionnel)
               </label>
               <input
                 id="phone"
                 name="phone"
                 type="tel"
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Phone number"
+                placeholder="Numéro de téléphone"
                 value={formData.phone}
                 onChange={handleChange}
               />
@@ -162,7 +162,7 @@ const SignUp = () => {
             {/* Role Selection */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                I am a
+                Je suis
               </label>
               <select
                 id="role"
@@ -172,15 +172,15 @@ const SignUp = () => {
                 value={formData.role}
                 onChange={handleChange}
               >
-                <option value="student">Student</option>
-                <option value="educator">Educator</option>
+                <option value="student">Étudiant</option>
+                <option value="educator">Éducateur</option>
               </select>
             </div>
 
             {/* Password Fields */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Mot de passe
               </label>
               <input
                 id="password"
@@ -189,7 +189,7 @@ const SignUp = () => {
                 autoComplete="new-password"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password (min 8 characters)"
+                placeholder="Mot de passe (min 8 caractères)"
                 value={formData.password}
                 onChange={handleChange}
               />
@@ -197,7 +197,7 @@ const SignUp = () => {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
+                Confirmer le mot de passe
               </label>
               <input
                 id="confirmPassword"
@@ -206,7 +206,7 @@ const SignUp = () => {
                 autoComplete="new-password"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm password"
+                placeholder="Confirmer le mot de passe"
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
@@ -227,13 +227,13 @@ const SignUp = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Création du compte...' : 'Créer le compte'}
             </button>
           </div>
 
           <div className="text-center">
             <a href="/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Already have an account? Sign in
+              Déjà un compte ? Se connecter
             </a>
           </div>
         </form>

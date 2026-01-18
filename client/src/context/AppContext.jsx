@@ -5,7 +5,6 @@ import humanizeDuration from "humanize-duration"
 import { useAuth } from '@/context/AuthContext'
 import axios from 'axios'
 import {  toast } from 'react-toastify';
-import { supabase } from '@/config/supabase';
 
 export const AppContext = createContext()
 
@@ -15,11 +14,13 @@ export const AppContextProvider = (props)=>{
     const currency = import.meta.env.VITE_CURRENCY;
     const navigate = useNavigate();
 
-    const { user } = useAuth();
+    const { user, token } = useAuth();
 
     const [allCourses, setAllCourses] = useState([])
     const [isEducator, setIsEducator] = useState(false)
+    const [isAdmin, setIsAdmin] = useState(false)
     const [enrolledCourses, setEnrolledCourses] = useState([])
+    const [wishlist, setWishlist] = useState([])
     const [userData, setUserData] = useState(null)
 
     // fetch all courses 
@@ -40,45 +41,18 @@ export const AppContextProvider = (props)=>{
 
     // fetch user data
     const fetchUserData = async ()=>{
-        if (!user) return;
+        if (!user || !token) return;
 
         try {
-            // Get user profile from our database
-            const {data} = await axios.get(`${backendUrl}/api/user/profile/${user.id}`)
-        
-            if(data.success){
-                setUserData(data.user)
-                if(data.user.role === 'educator'){
-                    setIsEducator(true);
-                }
-            }else{
-                toast.error(data.message)
+            setUserData(user)
+            if(user.role === 'educator' || user.role === 'admin'){
+                setIsEducator(true);
             }
-
+            if(user.role === 'admin'){
+                setIsAdmin(true);
+            }
         } catch (error) {
             console.error('Error fetching user data:', error)
-            // If user doesn't exist in our database, create them
-            if (error.response?.status === 404) {
-                try {
-                    const userData = {
-                        id: user.id,
-                        email: user.email,
-                        first_name: user.user_metadata?.first_name || '',
-                        last_name: user.user_metadata?.last_name || '',
-                        role: user.user_metadata?.role || 'student'
-                    }
-                    
-                    const response = await axios.post(`${backendUrl}/api/user/register`, userData)
-                    if (response.data.success) {
-                        setUserData(response.data.user)
-                        if (response.data.user.role === 'educator') {
-                            setIsEducator(true)
-                        }
-                    }
-                } catch (registerError) {
-                    console.error('Error registering user:', registerError)
-                }
-            }
         }
     }
 
@@ -124,55 +98,100 @@ export const AppContextProvider = (props)=>{
 
     // Fetch user enrolled courses
     const fetchUserEnrolledCourses = async () => {
-        if (!user) return;
+        if (!user || !token) return;
         
         try {
-            // Get the current session to access the access token
-            const { data: { session } } = await supabase.auth.getSession()
-            const accessToken = session?.access_token
-            
-            if (!accessToken) {
-                console.log('No access token available')
-                return
-            }
-            
             const response = await axios.get(`${backendUrl}/api/user/enrolled-courses`, {
                 headers: { 
-                    Authorization: `Bearer ${accessToken}` 
+                    Authorization: `Bearer ${token}` 
                 }
             });
     
             if (response.data && response.data.enrolledCourses) {
                 setEnrolledCourses(response.data.enrolledCourses.reverse());
-            } else {
-                toast.error(response.data?.message || "No enrolled courses found.");
             }
         } catch (error) {
             console.error("Error fetching courses:", error);
-            toast.error(error.response?.data?.message || error.message);
         }
     };
     
+    // Fetch user wishlist
+    const fetchWishlist = async () => {
+        if (!user || !token) return;
+        try {
+            const { data } = await axios.get(`${backendUrl}/api/user/wishlist`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                setWishlist(data.wishlist || []);
+            }
+        } catch (error) {
+            console.error("Error fetching wishlist:", error);
+        }
+    };
+
+    // Add to wishlist
+    const addToWishlist = async (courseId) => {
+        if (!user || !token) {
+            toast.error('Connectez-vous pour ajouter aux favoris');
+            return false;
+        }
+        try {
+            const { data } = await axios.post(`${backendUrl}/api/user/wishlist/${courseId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                toast.success('Ajouté aux favoris');
+                fetchWishlist();
+                return true;
+            } else {
+                toast.info(data.message);
+                return false;
+            }
+        } catch (error) {
+            toast.error('Erreur lors de l\'ajout');
+            return false;
+        }
+    };
+
+    // Remove from wishlist
+    const removeFromWishlist = async (courseId) => {
+        try {
+            const { data } = await axios.delete(`${backendUrl}/api/user/wishlist/${courseId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                toast.success('Retiré des favoris');
+                fetchWishlist();
+                return true;
+            }
+            return false;
+        } catch (error) {
+            toast.error('Erreur lors de la suppression');
+            return false;
+        }
+    };
+
+    // Check if course is in wishlist
+    const isInWishlist = (courseId) => {
+        return wishlist.some(course => course._id === courseId);
+    };
+
     useEffect(()=>{
         fetchAllCourses()
     },[])
 
     useEffect(()=>{
-        if(user){
+        if(user && token){
             fetchUserData()
             fetchUserEnrolledCourses()
+            fetchWishlist()
         }
-    },[user])
+    },[user, token])
 
     // Helper function to get access token
-    const getAccessToken = async () => {
-        try {
-            const { data: { session } } = await supabase.auth.getSession()
-            return session?.access_token
-        } catch (error) {
-            console.error('Error getting access token:', error)
-            return null
-        }
+    const getAccessToken = () => {
+        return token
     }
 
     const value = {
@@ -181,6 +200,8 @@ export const AppContextProvider = (props)=>{
         navigate, 
         isEducator, 
         setIsEducator,
+        isAdmin,
+        setIsAdmin,
         calculateRating,
         calculateChapterTime,
         calculateCourseDuration,
@@ -192,7 +213,12 @@ export const AppContextProvider = (props)=>{
         userData, 
         setUserData, 
         fetchAllCourses,
-        getAccessToken
+        getAccessToken,
+        wishlist,
+        addToWishlist,
+        removeFromWishlist,
+        isInWishlist,
+        fetchWishlist
     }
 
     return (

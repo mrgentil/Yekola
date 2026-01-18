@@ -3,38 +3,63 @@ import {
     addUserRating, 
     getUserCourseProgress, 
     getUserData, 
-    purchaseCourse, 
+    getCoursePaymentInfo,
+    submitPaymentRequest,
+    getUserPaymentRequests,
+    getPendingPaymentRequests,
+    approvePaymentRequest,
+    rejectPaymentRequest,
     updateUserCourseProgress, 
     userEnrolledCourses,
     registerUser,
+    loginUser,
     getUserProfile,
     updateUserProfile,
     verifyUserEmail,
     getAllUsers,
     processPendingPurchases,
     manuallyEnrollUser,
-    debugUserEnrollment
+    debugUserEnrollment,
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist
 } from "../controllers/userController.js";
-import { supabaseAuthMiddleware } from '../middlewares/supabaseAuth.js';
+import { authMiddleware, protectEducator } from '../middlewares/authMiddleware.js';
 
 const userRouter = express.Router();
 
-// Authentication routes (no auth required)
+// Public routes (no auth required)
 userRouter.post('/register', registerUser);
-userRouter.get('/profile/:supabaseId', getUserProfile);
-userRouter.put('/profile/:supabaseId', updateUserProfile);
-userRouter.post('/verify-email/:supabaseId', verifyUserEmail);
+userRouter.post('/login', loginUser);
 userRouter.get('/all', getAllUsers);
 
 // Protected routes (auth required)
-userRouter.get('/data', supabaseAuthMiddleware, getUserData);
-userRouter.get('/enrolled-courses', supabaseAuthMiddleware, userEnrolledCourses);
-userRouter.post('/purchase', supabaseAuthMiddleware, purchaseCourse);
-userRouter.post('/process-pending-purchases', supabaseAuthMiddleware, processPendingPurchases);
-userRouter.post('/update-course-progress', supabaseAuthMiddleware, updateUserCourseProgress);
-userRouter.post('/get-course-progress', supabaseAuthMiddleware, getUserCourseProgress);
-userRouter.post('/add-rating', supabaseAuthMiddleware, addUserRating);
-userRouter.post('/manual-enroll', supabaseAuthMiddleware, manuallyEnrollUser);
-userRouter.get('/debug-enrollment', supabaseAuthMiddleware, debugUserEnrollment);
+userRouter.get('/profile', authMiddleware, getUserProfile);
+userRouter.put('/profile', authMiddleware, updateUserProfile);
+userRouter.post('/verify-email', authMiddleware, verifyUserEmail);
+userRouter.get('/data', authMiddleware, getUserData);
+userRouter.get('/enrolled-courses', authMiddleware, userEnrolledCourses);
+
+// Mobile Money Payment routes
+userRouter.get('/payment-info/:courseId', authMiddleware, getCoursePaymentInfo);
+userRouter.post('/submit-payment', authMiddleware, submitPaymentRequest);
+userRouter.get('/my-payment-requests', authMiddleware, getUserPaymentRequests);
+
+// Admin payment management routes
+userRouter.get('/admin/pending-payments', authMiddleware, protectEducator, getPendingPaymentRequests);
+userRouter.post('/admin/approve-payment/:requestId', authMiddleware, protectEducator, approvePaymentRequest);
+userRouter.post('/admin/reject-payment/:requestId', authMiddleware, protectEducator, rejectPaymentRequest);
+
+userRouter.post('/process-pending-purchases', authMiddleware, processPendingPurchases);
+userRouter.post('/update-course-progress', authMiddleware, updateUserCourseProgress);
+userRouter.post('/get-course-progress', authMiddleware, getUserCourseProgress);
+userRouter.post('/add-rating', authMiddleware, addUserRating);
+userRouter.post('/manual-enroll', authMiddleware, manuallyEnrollUser);
+userRouter.get('/debug-enrollment', authMiddleware, debugUserEnrollment);
+
+// Wishlist routes
+userRouter.get('/wishlist', authMiddleware, getWishlist);
+userRouter.post('/wishlist/:courseId', authMiddleware, addToWishlist);
+userRouter.delete('/wishlist/:courseId', authMiddleware, removeFromWishlist);
 
 export default userRouter;

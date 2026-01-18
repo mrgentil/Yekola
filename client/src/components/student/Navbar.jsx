@@ -3,14 +3,17 @@ import { assets } from "../../assets/assets";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AppContext } from "../../context/AppContext";
+import { SiteContext } from "../../context/SiteContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Logger from "../Logger";
+import NotificationBell from "../NotificationBell";
 
 const Navbar = () => {
 	const navigate = useNavigate();
 	const isCourseListPage = location.pathname.includes("/course-list");
-	const {backendUrl, isEducator, setIsEducator, getAccessToken} = useContext(AppContext);
+	const {backendUrl, isEducator, setIsEducator, isAdmin, getAccessToken} = useContext(AppContext);
+	const { siteSettings } = useContext(SiteContext);
 	const { user, signOut } = useAuth();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -23,12 +26,12 @@ const Navbar = () => {
 
 			// Show confirmation dialog
 			const confirmed = window.confirm(
-				"Are you sure you want to become an educator?\n\n" +
-				"This will give you access to:\n" +
-				"• Create and manage courses\n" +
-				"• View student enrollments\n" +
-				"• Access educator dashboard\n\n" +
-				"Click 'OK' to confirm or 'Cancel' to go back."
+				"Êtes-vous sûr de vouloir devenir éducateur ?\n\n" +
+				"Cela vous donnera accès à :\n" +
+				"• Créer et gérer des cours\n" +
+				"• Voir les inscriptions des étudiants\n" +
+				"• Accéder au tableau de bord éducateur\n\n" +
+				"Cliquez sur 'OK' pour confirmer ou 'Annuler' pour revenir."
 			);
 
 			if (!confirmed) {
@@ -37,7 +40,7 @@ const Navbar = () => {
 
 			const token = await getAccessToken();
 			if (!token) {
-				toast.error('Authentication required. Please sign in again.');
+				toast.error('Authentification requise. Veuillez vous reconnecter.');
 				return;
 			}
 
@@ -96,9 +99,9 @@ const Navbar = () => {
 								{/* Brand Name */}
 								<div className="hidden sm:block">
 									<h1 className="text-xl font-bold text-white group-hover:text-yellow-200 transition-colors duration-300">
-										LearnHub
+										{siteSettings.siteName || 'LearnHub'}
 									</h1>
-									<p className="text-xs text-white/70 -mt-1">Your Learning Journey</p>
+									<p className="text-xs text-white/70 -mt-1">{siteSettings.siteTagline || "Votre parcours d'apprentissage"}</p>
 								</div>
 							</div>
 						</div>
@@ -109,18 +112,29 @@ const Navbar = () => {
 							<div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
 								<div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
 								<span className="text-white text-sm font-medium">
-									Visitors: <span className="text-green-300 font-bold">12,053</span>
+									Visiteurs : <span className="text-green-300 font-bold">12 053</span>
 								</span>
 							</div>
 
 							{/* Navigation Links */}
 							{user && (
 								<div className="flex items-center space-x-6">
+									{isAdmin && (
+										<>
+											<Link 
+												to="/admin"
+												className="text-yellow-300 hover:text-yellow-200 font-medium transition-colors duration-200 hover:scale-105 transform flex items-center gap-1"
+											>
+												🛡️ Administration
+											</Link>
+											<div className="w-px h-6 bg-white/20"></div>
+										</>
+									)}
 									<button 
 										onClick={becomeEducator}
 										className="text-white/90 hover:text-white font-medium transition-colors duration-200 hover:scale-105 transform"
 									>
-										{isEducator ? "Educator Dashboard" : "Become Educator"}
+										{isEducator ? "Tableau de bord" : "Devenir éducateur"}
 									</button>
 									
 									<div className="w-px h-6 bg-white/20"></div>
@@ -129,7 +143,25 @@ const Navbar = () => {
 										to="/my-enrollments"
 										className="text-white/90 hover:text-white font-medium transition-colors duration-200 hover:scale-105 transform"
 									>
-										My Enrollments
+										Mes inscriptions
+									</Link>
+									
+									<div className="w-px h-6 bg-white/20"></div>
+									
+									<Link 
+										to="/profile"
+										className="text-white/90 hover:text-white font-medium transition-colors duration-200 hover:scale-105 transform"
+									>
+										Mon profil
+									</Link>
+									
+									<div className="w-px h-6 bg-white/20"></div>
+									
+									<Link 
+										to="/wishlist"
+										className="text-pink-300 hover:text-pink-200 font-medium transition-colors duration-200 hover:scale-105 transform flex items-center gap-1"
+									>
+										❤️ Favoris
 									</Link>
 								</div>
 							)}
@@ -137,18 +169,28 @@ const Navbar = () => {
 							{/* User Section */}
 							{user ? (
 								<div className="flex items-center space-x-4">
-									<div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-										<div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-										<span className="text-white/90 text-sm font-medium truncate">
-											{user.email}
-										</span>
+									{/* Notification Bell */}
+									<div className="text-white">
+										<NotificationBell />
 									</div>
+									
+									<Link 
+										to="/profile"
+										className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition-colors"
+									>
+										<div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+											{user.firstName?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+										</div>
+										<span className="text-white/90 text-sm font-medium truncate max-w-[120px]">
+											{user.firstName || user.email}
+										</span>
+									</Link>
 									
 									<button
 										onClick={handleSignOut}
 										className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
 									>
-										Sign Out
+										Déconnexion
 									</button>
 								</div>
 							) : (
@@ -156,7 +198,7 @@ const Navbar = () => {
 									onClick={() => navigate('/signup')}
 									className="bg-white text-indigo-600 hover:bg-yellow-100 px-6 py-2 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
 								>
-									Create Account
+									Créer un compte
 								</button>
 							)}
 						</div>
@@ -187,7 +229,7 @@ const Navbar = () => {
 							<div className="flex items-center justify-center space-x-2 bg-indigo-500/20  px-4 py-2">
 								<div className="w-2 h-2 bg-green-400  animate-pulse"></div>
 								<span className="text-indigo-800 text-sm font-medium">
-									Visitors: <span className="text-green-600 font-bold">12,053</span>
+									Visiteurs : <span className="text-green-600 font-bold">12 053</span>
 								</span>
 							</div>
 
@@ -201,7 +243,7 @@ const Navbar = () => {
 										}}
 										className="w-full text-left text-indigo-800 font-medium py-2 px-4 rounded-lg hover:bg-indigo-50 transition-colors duration-200"
 									>
-										{isEducator ? "Educator Dashboard" : "Become Educator"}
+										{isEducator ? "Tableau de bord" : "Devenir éducateur"}
 									</button>
 									
 									<Link 
@@ -209,7 +251,7 @@ const Navbar = () => {
 										onClick={() => setIsMenuOpen(false)}
 										className="block text-indigo-800 font-medium py-2 px-4 rounded-lg hover:bg-indigo-50 transition-colors duration-200"
 									>
-										My Enrollments
+										Mes inscriptions
 									</Link>
 								</div>
 							)}
@@ -231,7 +273,7 @@ const Navbar = () => {
 										}}
 										className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200"
 									>
-										Sign Out
+										Déconnexion
 									</button>
 								</div>
 							) : (
@@ -242,7 +284,7 @@ const Navbar = () => {
 									}}
 									className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors duration-200"
 								>
-									Create Account
+									Créer un compte
 								</button>
 							)}
 						</div>

@@ -97,7 +97,7 @@ const Player = () => {
             })
 
             if (data.success) {
-                toast.success('Rating added successfully')
+                toast.success('Merci pour votre note !')
                 fetchCourseData()
             } else {
                 toast.error(data.message)
@@ -202,7 +202,7 @@ const Player = () => {
                                   })}
 
 													className="w-4 h-4 mt-1 cursor-pointer"
-													src={progressData && progressData.lectureCompleted.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
+													src={progressData?.lectureCompleted?.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
 													alt="play_icon"
 												/>
 												<div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
@@ -236,9 +236,15 @@ const Player = () => {
 						))}
 					</div>
 
-            <div className=" flex items-center gap-2 py-3 mt-10 ">
-              <h1 className="text-xl font-bold">Rate this Course:</h1>
-              <Rating initialRating={initialRating} onRate={handleRate}/>
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 mt-10 border border-yellow-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">⭐ Notez ce cours</h2>
+              <p className="text-gray-600 text-sm mb-4">Votre avis aide les autres étudiants à choisir leurs cours</p>
+              <div className="flex items-center gap-4">
+                <Rating initialRating={initialRating} onRate={handleRate}/>
+                <span className="text-gray-500 text-sm">
+                  {initialRating > 0 ? `Vous avez donné ${initialRating} étoile${initialRating > 1 ? 's' : ''}` : 'Cliquez pour noter'}
+                </span>
+              </div>
             </div>
 
 
@@ -262,7 +268,7 @@ const Player = () => {
               
               <div className="flex justify-between items-center mt-1">
                 <p>{playerData.chapter}.{playerData.lecture} {playerData.lectureTitle} </p>
-                <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">{progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? 'Completed' : 'Mark As Complete'}</button>
+                <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">{progressData?.lectureCompleted?.includes(playerData.lectureId) ? '✓ Terminé' : 'Marquer comme terminé'}</button>
               </div>
             </div>
           ) 

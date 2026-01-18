@@ -24,18 +24,18 @@ const Companies = () => {
         >
           <div className='inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-blue-200'>
             <div className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></div>
-            <span>Trusted Worldwide</span>
+            <span>Reconnu mondialement</span>
           </div>
           
           <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight'>
-            Trusted by Leading{' '}
+            Approuvé par les{' '}
             <span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600'>
-              Companies
+              grandes entreprises
             </span>
           </h2>
           
           <p className='text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed'>
-            Join thousands of professionals from world-renowned companies who trust LearnHub for their learning journey
+            Rejoignez des milliers de professionnels d'entreprises de renommée mondiale qui font confiance à LearnHub pour leur parcours d'apprentissage
           </p>
         </motion.div>
 
@@ -106,7 +106,7 @@ const Companies = () => {
               </div>
               <div className='absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse'></div>
             </div>
-            <div className='text-gray-600 font-medium'>Active Learners</div>
+            <div className='text-gray-600 font-medium'>Apprenants actifs</div>
           </div>
           
           <div className='text-center group'>
@@ -116,7 +116,7 @@ const Companies = () => {
               </div>
               <div className='absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse'></div>
             </div>
-            <div className='text-gray-600 font-medium'>Expert Courses</div>
+            <div className='text-gray-600 font-medium'>Cours experts</div>
           </div>
           
           <div className='text-center group'>
@@ -126,7 +126,7 @@ const Companies = () => {
               </div>
               <div className='absolute -top-2 -right-2 w-4 h-4 bg-pink-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse'></div>
             </div>
-            <div className='text-gray-600 font-medium'>Success Rate</div>
+            <div className='text-gray-600 font-medium'>Taux de réussite</div>
           </div>
         </motion.div>
 
@@ -144,7 +144,7 @@ const Companies = () => {
                 <path fillRule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clipRule='evenodd' />
               </svg>
             </div>
-            <span>ISO 27001 Certified</span>
+            <span>Certifié ISO 27001</span>
             <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
           </div>
         </motion.div>
@@ -159,15 +159,15 @@ const Companies = () => {
         >
           <div className='flex items-center space-x-2'>
             <div className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></div>
-            <span>SSL Secured</span>
+            <span>Sécurisé SSL</span>
           </div>
           <div className='flex items-center space-x-2'>
             <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
-            <span>24/7 Support</span>
+            <span>Support 24/7</span>
           </div>
           <div className='flex items-center space-x-2'>
             <div className='w-2 h-2 bg-purple-500 rounded-full animate-pulse'></div>
-            <span>Money Back Guarantee</span>
+            <span>Garantie satisfait ou remboursé</span>
           </div>
         </motion.div>
       </div>

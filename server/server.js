@@ -7,6 +7,10 @@ import educatorRouter from './routes/educatorRoutes.js';
 import connectCloudinay from './configs/cloudinary.js';
 import courseRouter from './routes/courseRoute.js';
 import userRouter from './routes/userRoutes.js';
+import adminRouter from './routes/adminRoutes.js';
+import couponRouter from './routes/couponRoutes.js';
+import settingsRouter from './routes/settingsRoutes.js';
+import notificationRouter from './routes/notificationRoutes.js';
 
 // initialize express 
 const app = express();
@@ -24,6 +28,10 @@ app.get('/', (req,res)=>{res.send("LearnHub API is working fine!")})
 app.use('/api/educator', educatorRouter);
 app.use('/api/course', courseRouter);
 app.use('/api/user', userRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/coupon', couponRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/notifications', notificationRouter);
 app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks);
 
 // port

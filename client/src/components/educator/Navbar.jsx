@@ -3,6 +3,7 @@ import { assets } from "../../assets/assets";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Logger from "../Logger";
+import NotificationBell from "../NotificationBell";
 
 const Navbar = () => {
 	const { user, signOut } = useAuth();
@@ -99,6 +100,11 @@ const Navbar = () => {
 								<Logger />
 							</div>
 
+							{/* Notification Bell */}
+							<div className="text-white">
+								<NotificationBell />
+							</div>
+
 							{/* User Info */}
 							{user ? (
 								<div className="flex items-center space-x-4">
@@ -113,7 +119,7 @@ const Navbar = () => {
 										onClick={handleSignOut}
 										className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
 									>
-										Sign Out
+										Déconnexion
 									</button>
 								</div>
 							) : (

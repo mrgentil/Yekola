@@ -53,7 +53,7 @@ const SearchBar = ({data}) => {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             type="text"
-            placeholder="Search for courses, skills, or instructors..."
+            placeholder="Rechercher des cours, compétences ou instructeurs..."
             className="flex-1 h-full bg-transparent outline-none text-gray-700 placeholder-gray-500 text-lg font-medium pr-4"
           />
 
@@ -70,7 +70,7 @@ const SearchBar = ({data}) => {
               ${input.trim() ? 'opacity-100' : 'opacity-70'}
             `}
           >
-            <span className="relative z-10">Search</span>
+            <span className="relative z-10">Rechercher</span>
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </button>
         </div>
@@ -78,7 +78,7 @@ const SearchBar = ({data}) => {
         {/* Popular Searches */}
         {isFocused && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg z-50 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Popular searches:</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">Recherches populaires :</p>
             <div className="flex flex-wrap gap-2">
               {['JavaScript', 'Python', 'React', 'Design', 'Business', 'Marketing'].map((term) => (
                 <button
@@ -104,13 +104,13 @@ const SearchBar = ({data}) => {
           <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span>500+ courses available</span>
+          <span>500+ cours disponibles</span>
         </div>
         <div className="flex items-center space-x-1">
           <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span>Instant access</span>
+          <span>Accès instantané</span>
         </div>
       </div>
     </div>

@@ -1,21 +1,59 @@
-import { supabase } from '../configs/supabase.js'
+import jwt from 'jsonwebtoken'
+import User from '../models/User.js'
 
-// Middleware (protect educator route)
-export const protectEducator = async(req,res, next) => {
+// JWT Authentication Middleware
+export const authMiddleware = async (req, res, next) => {
     try {
-        const userId = req.user.id // Using Supabase user ID
+        const authHeader = req.headers.authorization
         
-        // Get user from our database
-        const User = (await import('../models/User.js')).default
-        const user = await User.findOne({ supabaseId: userId })
-
-        if (!user || user.role !== 'educator') {
-            return res.json({success: false, message:"Unauthorized Access!"})
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, error: 'No token provided' })
         }
-        
-        next()
 
+        const token = authHeader.substring(7)
+
+        // Verify JWT token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        
+        // Get user from database
+        const user = await User.findById(decoded.userId).select('-password')
+        
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'User not found' })
+        }
+
+        // Add user info to request object
+        req.user = user
+        next()
     } catch (error) {
-        res.json({success: false, message:error.message})
+        console.error('Auth middleware error:', error)
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ success: false, error: 'Invalid token' })
+        }
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, error: 'Token expired' })
+        }
+        res.status(500).json({ success: false, error: 'Authentication failed' })
     }
+}
+
+// Middleware (protect educator route - also allows admin)
+export const protectEducator = async (req, res, next) => {
+    try {
+        if (!req.user || (req.user.role !== 'educator' && req.user.role !== 'admin')) {
+            return res.json({ success: false, message: "Unauthorized Access!" })
+        }
+        next()
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Generate JWT Token
+export const generateToken = (userId) => {
+    return jwt.sign(
+        { userId },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    )
 }

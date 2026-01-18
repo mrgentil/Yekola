@@ -110,24 +110,24 @@ export const dummyEducatorData = {
 export const dummyTestimonial = [
     {
         name: 'Sophia Carter',
-        role: 'Student @ AKTU',
+        role: 'Étudiante @ AKTU',
         image: assets.abhishek,
         rating: 5,
-        feedback: 'LearnHub LMS has revolutionized my teaching experience. The platform is intuitive, making course creation and student engagement seamless.',
+        feedback: 'LearnHub LMS a révolutionné mon expérience d\'apprentissage. La plateforme est intuitive, rendant la création de cours et l\'engagement des étudiants fluides.',
     },
     {
         name: 'Shreyansh Dubey',
-        role: 'Student @ KNIT',
+        role: 'Étudiant @ KNIT',
         image: assets.shreyansh,
         rating: 4.8,
-        feedback: 'LearnHub LMS provides an exceptional learning environment. The structured courses, real-time tracking, and user-friendly interface are top-notch.',
+        feedback: 'LearnHub LMS offre un environnement d\'apprentissage exceptionnel. Les cours structurés, le suivi en temps réel et l\'interface conviviale sont excellents.',
     },
     {
         name: 'Olivia Martinez',
-        role: 'Software Engineer @ Microsoft',
+        role: 'Ingénieure logiciel @ Microsoft',
         image: assets.profile_img_3,
         rating: 4.7,
-        feedback: 'LearnHub LMS is a fantastic platform for upskilling. Its diverse course library and smooth UI make learning highly effective and engaging.',
+        feedback: 'LearnHub LMS est une plateforme fantastique pour développer ses compétences. Sa bibliothèque de cours diversifiée et son interface fluide rendent l\'apprentissage efficace.',
     },
 ];
 

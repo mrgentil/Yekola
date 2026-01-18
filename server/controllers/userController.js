@@ -1,47 +1,52 @@
-import Stripe from "stripe"
 import Course from "../models/Course.js"
 import { Purchase } from "../models/Purchase.js"
 import User from "../models/User.js"
 import { CourseProgress } from "../models/CourseProgress.js"
-import { supabase } from '../configs/supabase.js'
+import { generateToken } from '../middlewares/authMiddleware.js'
+import PaymentRequest from "../models/PaymentRequest.js"
+import Settings from "../models/Settings.js"
+import { createNotification } from './notificationController.js'
 
 // Register new user
 export const registerUser = async (req, res) => {
   try {
-    const { id, supabaseId, email, first_name, last_name, role, phone } = req.body
+    const { email, password, firstName, lastName, role, phone } = req.body
 
-    // Use either id or supabaseId
-    const userId = id || supabaseId
-
-    if (!userId || !email) {
-      return res.status(400).json({ error: 'User ID and email are required' })
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' })
     }
 
-    // Check if user already exists by email or supabaseId
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { supabaseId: userId }] 
-    })
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' })
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email })
     
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' })
+      return res.status(400).json({ success: false, error: 'User already exists' })
     }
 
     // Create new user in database
     const newUser = new User({
-      supabaseId: userId,
       email,
-      firstName: first_name || '',
-      lastName: last_name || '',
+      password,
+      firstName: firstName || '',
+      lastName: lastName || '',
       role: role || 'student',
       phone: phone || '',
-      isVerified: false
+      isVerified: true
     })
 
     await newUser.save()
 
+    // Generate JWT token
+    const token = generateToken(newUser._id)
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
+      token,
       user: {
         id: newUser._id,
         email: newUser.email,
@@ -52,20 +57,59 @@ export const registerUser = async (req, res) => {
     })
   } catch (error) {
     console.error('Registration error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ success: false, error: 'Internal server error' })
   }
 }
 
-// Get user profile
-export const getUserProfile = async (req, res) => {
+// Login user
+export const loginUser = async (req, res) => {
   try {
-    const { supabaseId } = req.params
+    const { email, password } = req.body
 
-    const user = await User.findOne({ supabaseId })
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' })
     }
 
+    // Find user by email
+    const user = await User.findOne({ email })
+    
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' })
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password)
+    
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' })
+    }
+
+    // Generate JWT token
+    const token = generateToken(user._id)
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    })
+  } catch (error) {
+    console.error('Login error:', error)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+}
+
+// Get user profile (authenticated user)
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = req.user
+    
     res.json({
       success: true,
       user: {
@@ -80,24 +124,26 @@ export const getUserProfile = async (req, res) => {
     })
   } catch (error) {
     console.error('Get profile error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ success: false, error: 'Internal server error' })
   }
 }
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
   try {
-    const { supabaseId } = req.params
     const updateData = req.body
+    
+    // Don't allow password update through this route
+    delete updateData.password
 
-    const user = await User.findOneAndUpdate(
-      { supabaseId },
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
       updateData,
       { new: true, runValidators: true }
-    )
+    ).select('-password')
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ success: false, error: 'User not found' })
     }
 
     res.json({
@@ -114,23 +160,21 @@ export const updateUserProfile = async (req, res) => {
     })
   } catch (error) {
     console.error('Update profile error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ success: false, error: 'Internal server error' })
   }
 }
 
 // Verify user email
 export const verifyUserEmail = async (req, res) => {
   try {
-    const { supabaseId } = req.params
-
-    const user = await User.findOneAndUpdate(
-      { supabaseId },
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
       { isVerified: true },
       { new: true }
     )
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ success: false, error: 'User not found' })
     }
 
     res.json({
@@ -139,7 +183,7 @@ export const verifyUserEmail = async (req, res) => {
     })
   } catch (error) {
     console.error('Email verification error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ success: false, error: 'Internal server error' })
   }
 }
 
@@ -169,10 +213,9 @@ export const getAllUsers = async (req, res) => {
 // Get users data
 export const getUserData = async(req,res)=>{
     try {
-        const userId = req.user.id // Using Supabase user ID
-        const user = await User.findOne({ supabaseId: userId })
+        const user = req.user
         if(!user){
-            res.json({success: false, message:"User not found!"})
+            return res.json({success: false, message:"User not found!"})
         }
 
         res.json({success: true, user});
@@ -185,8 +228,7 @@ export const getUserData = async(req,res)=>{
 
 export const userEnrolledCourses = async (req,res)=>{
     try {
-        const userId = req.user.id 
-        const userData = await User.findOne({ supabaseId: userId })
+        const userData = req.user
 
         if (!userData) {
             return res.json({success: false, message: "User not found"})
@@ -195,27 +237,23 @@ export const userEnrolledCourses = async (req,res)=>{
         // Process any pending purchases first
         try {
             const pendingPurchases = await Purchase.find({
-                userId: userId,
+                userId: userData._id,
                 status: 'pending'
             });
 
             if (pendingPurchases.length > 0) {
+                const user = await User.findById(userData._id)
                 for (const purchase of pendingPurchases) {
                     const courseData = await Course.findById(purchase.courseId);
-                    if (courseData && !userData.enrolledCourses.includes(courseData._id)) {
-                        // Add course to user's enrolled courses
-                        userData.enrolledCourses.push(courseData._id);
-                        // Add user to course's enrolled students
-                        courseData.enrolledStudents.push(userData.supabaseId);
-                        
+                    if (courseData && !user.enrolledCourses.includes(courseData._id)) {
+                        user.enrolledCourses.push(courseData._id);
+                        courseData.enrolledStudents.push(user._id);
                         await courseData.save();
                     }
-                    // Update purchase status
                     purchase.status = 'completed';
                     await purchase.save();
                 }
-                
-                await userData.save();
+                await user.save();
             }
         } catch (processError) {
             console.error('Error processing pending purchases:', processError);
@@ -224,7 +262,7 @@ export const userEnrolledCourses = async (req,res)=>{
         // Also check for completed purchases that might not be reflected in enrollments
         try {
             const completedPurchases = await Purchase.find({
-                userId: userId,
+                userId: userData._id,
                 status: 'completed'
             });
 
@@ -234,7 +272,7 @@ export const userEnrolledCourses = async (req,res)=>{
                     // Add course to user's enrolled courses
                     userData.enrolledCourses.push(courseData._id);
                     // Add user to course's enrolled students
-                    courseData.enrolledStudents.push(userData.supabaseId);
+                    courseData.enrolledStudents.push(userData._id);
                     
                     await courseData.save();
                 }
@@ -246,7 +284,7 @@ export const userEnrolledCourses = async (req,res)=>{
         }
 
         // Get updated user data
-        const updatedUserData = await User.findOne({ supabaseId: userId })
+        const updatedUserData = await User.findById(userData._id)
 
         // Get enrolled courses manually to avoid populate issues
         const enrolledCourses = await Course.find({
@@ -264,11 +302,7 @@ export const userEnrolledCourses = async (req,res)=>{
 export const manuallyEnrollUser = async (req, res) => {
     try {
         const { courseId } = req.body;
-        const userId = req.user.id;
-        
-
-        
-        const userData = await User.findOne({ supabaseId: userId });
+        const userData = await User.findById(req.user._id);
         const courseData = await Course.findById(courseId);
         
         if (!userData || !courseData) {
@@ -285,7 +319,7 @@ export const manuallyEnrollUser = async (req, res) => {
         await userData.save();
         
         // Add user to course's enrolled students
-        courseData.enrolledStudents.push(userData.supabaseId);
+        courseData.enrolledStudents.push(userData._id);
         await courseData.save();
         
         res.json({ success: true, message: "User enrolled successfully" });
@@ -298,17 +332,15 @@ export const manuallyEnrollUser = async (req, res) => {
 // Debug function to check user enrollment status
 export const debugUserEnrollment = async (req, res) => {
     try {
-        const userId = req.user.id;
-        
-        const userData = await User.findOne({ supabaseId: userId });
+        const userData = req.user;
         if (!userData) {
             return res.json({ success: false, message: "User not found" });
         }
         
         // Check all purchases for this user
-        const allPurchases = await Purchase.find({ userId: userId });
-        const pendingPurchases = await Purchase.find({ userId: userId, status: 'pending' });
-        const completedPurchases = await Purchase.find({ userId: userId, status: 'completed' });
+        const allPurchases = await Purchase.find({ userId: userData._id });
+        const pendingPurchases = await Purchase.find({ userId: userData._id, status: 'pending' });
+        const completedPurchases = await Purchase.find({ userId: userData._id, status: 'completed' });
         
         // Get course details for enrolled courses
         const enrolledCourses = await Course.find({
@@ -316,7 +348,7 @@ export const debugUserEnrollment = async (req, res) => {
         }).select('courseTitle courseDescription courseThumbnail coursePrice discount courseContent educator');
         
         const debugInfo = {
-            userId: userId,
+            userId: userData._id,
             userData: {
                 _id: userData._id,
                 email: userData.email,
@@ -353,11 +385,13 @@ export const debugUserEnrollment = async (req, res) => {
 // Process pending purchases and enroll user
 export const processPendingPurchases = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userData = await User.findById(req.user._id);
+        if (!userData) {
+            return res.json({ success: false, message: 'User not found' });
+        }
 
-        // Find all pending purchases for this user
         const pendingPurchases = await Purchase.find({
-            userId: userId,
+            userId: userData._id,
             status: 'pending'
         });
 
@@ -365,41 +399,28 @@ export const processPendingPurchases = async (req, res) => {
             return res.json({ success: true, message: 'No pending purchases found' });
         }
 
-        const userData = await User.findOne({ supabaseId: userId });
-        if (!userData) {
-            return res.json({ success: false, message: 'User not found' });
-        }
-
         let processedCount = 0;
 
         for (const purchase of pendingPurchases) {
             try {
                 const courseData = await Course.findById(purchase.courseId);
-                if (!courseData) {
-                    continue;
-                }
+                if (!courseData) continue;
 
-                // Check if already enrolled
                 if (userData.enrolledCourses.includes(courseData._id)) {
-                    // Still update purchase status
                     purchase.status = 'completed';
                     await purchase.save();
                     processedCount++;
                     continue;
                 }
 
-                // Add user to enrolled students
-                courseData.enrolledStudents.push(userData.supabaseId);
+                courseData.enrolledStudents.push(userData._id);
                 await courseData.save();
 
-                // Add course to user's enrolled courses
                 userData.enrolledCourses.push(courseData._id);
                 await userData.save();
 
-                // Update purchase status
                 purchase.status = 'completed';
                 await purchase.save();
-
                 processedCount++;
 
             } catch (error) {
@@ -418,62 +439,330 @@ export const processPendingPurchases = async (req, res) => {
     }
 };
 
-
-// Purchase course
-
-export const purchaseCourse = async (req,res) => {
+// Get course payment info (for Mobile Money payment page)
+export const getCoursePaymentInfo = async (req, res) => {
     try {
-        const {courseId} = req.body
-        const {origin} = req.headers
-        const userId = req.user.id; // Using Supabase user ID
-
-        const userData = await User.findOne({ supabaseId: userId })
+        const { courseId } = req.params
+        const userData = req.user
 
         const courseData = await Course.findById(courseId)
-        if(!userData || !courseData)
-        {
-            res.json({success: false, message: "Data Not Found"})
+        if (!courseData) {
+            return res.json({ success: false, message: "Course not found" })
         }
 
-        const purchaseData = {
-            courseId: courseData._id,
-            userId: userData.supabaseId,
-            amount: (courseData.coursePrice - courseData.discount * courseData.coursePrice / 100).toFixed(2),
-        }
+        const amount = (courseData.coursePrice - courseData.discount * courseData.coursePrice / 100).toFixed(2)
 
-        const newPurchase = await Purchase.create(purchaseData);
-
-        // stripe gateway initialize
-        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY)
-        const currency = process.env.CURRENCY.toLowerCase();
-        
-        // creating line items to for stripe
-        const line_items = [{
-            price_data:{
-                currency,
-                product_data:{
-                    name: courseData.courseTitle
-                },
-                unit_amount: Math.floor( newPurchase.amount ) * 100
+        // Payment instructions for RDC
+        const paymentInfo = {
+            course: {
+                id: courseData._id,
+                title: courseData.courseTitle,
+                price: courseData.coursePrice,
+                discount: courseData.discount,
+                finalAmount: amount
             },
-            quantity: 1
-        }]
+            paymentMethods: [
+                {
+                    id: 'mpesa',
+                    name: 'M-Pesa',
+                    phone: process.env.MPESA_NUMBER || '+243 XXX XXX XXX',
+                    instructions: 'Envoyez le montant au numéro ci-dessus via M-Pesa'
+                },
+                {
+                    id: 'orange_money',
+                    name: 'Orange Money',
+                    phone: process.env.ORANGE_MONEY_NUMBER || '+243 XXX XXX XXX',
+                    instructions: 'Envoyez le montant au numéro ci-dessus via Orange Money'
+                },
+                {
+                    id: 'airtel_money',
+                    name: 'Airtel Money',
+                    phone: process.env.AIRTEL_MONEY_NUMBER || '+243 XXX XXX XXX',
+                    instructions: 'Envoyez le montant au numéro ci-dessus via Airtel Money'
+                }
+            ],
+            currency: process.env.CURRENCY || 'USD'
+        }
 
-        const session = await stripeInstance.checkout.sessions.create({
-            success_url: `${origin}/loading/my-enrollments`,
-            cancel_url: `${origin}/`,
-            line_items: line_items,
-            mode: 'payment',
-            metadata: {
-                purchaseId: newPurchase._id.toString()
+        res.json({ success: true, paymentInfo })
+
+    } catch (error) {
+        console.error('Get payment info error:', error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Submit Mobile Money payment request
+export const submitPaymentRequest = async (req, res) => {
+    try {
+        console.log('=== SUBMIT PAYMENT REQUEST ===')
+        console.log('Body:', req.body)
+        
+        const { courseId, paymentMethod, phoneNumber, transactionRef } = req.body
+        const userData = req.user
+        
+        console.log('User ID:', userData?._id)
+
+        if (!courseId || !paymentMethod || !phoneNumber || !transactionRef) {
+            console.log('Missing fields!')
+            return res.json({ success: false, message: "Tous les champs sont requis" })
+        }
+
+        const courseData = await Course.findById(courseId)
+        if (!courseData) {
+            console.log('Course not found!')
+            return res.json({ success: false, message: "Cours non trouvé" })
+        }
+
+        // Check if user already enrolled
+        const user = await User.findById(userData._id)
+        if (user.enrolledCourses.includes(courseId)) {
+            return res.json({ success: false, message: "Vous êtes déjà inscrit à ce cours" })
+        }
+
+        // Check for existing pending request
+        const existingRequest = await PaymentRequest.findOne({
+            userId: userData._id,
+            courseId: courseId,
+            status: 'pending'
+        })
+
+        if (existingRequest) {
+            return res.json({ 
+                success: false, 
+                message: "Vous avez déjà une demande de paiement en attente pour ce cours" 
+            })
+        }
+
+        const amount = (courseData.coursePrice - courseData.discount * courseData.coursePrice / 100).toFixed(2)
+
+        console.log('Creating payment request with amount:', amount)
+
+        // Create payment request
+        try {
+            const paymentRequest = await PaymentRequest.create({
+                userId: userData._id,
+                courseId: courseData._id,
+                amount: parseFloat(amount),
+                currency: process.env.CURRENCY || 'USD',
+                paymentMethod,
+                phoneNumber,
+                transactionRef
+            })
+            
+            console.log('Payment request created:', paymentRequest._id)
+
+            // Notify all admins about new payment request
+            const admins = await User.find({ role: 'admin' })
+            for (const admin of admins) {
+                await createNotification(
+                    admin._id,
+                    'payment_request',
+                    'Nouvelle demande de paiement',
+                    `${userData.firstName} ${userData.lastName} a soumis une demande de paiement pour "${courseData.courseTitle}"`,
+                    '/admin/payments',
+                    { requestId: paymentRequest._id, courseId: courseData._id }
+                )
+            }
+
+            res.json({ 
+                success: true, 
+                message: "Demande de paiement soumise avec succès. Vous recevrez une confirmation après vérification.",
+                requestId: paymentRequest._id
+            })
+        } catch (createError) {
+            console.error('Error creating PaymentRequest:', createError)
+            return res.json({ success: false, message: createError.message })
+        }
+
+    } catch (error) {
+        console.error('Submit payment request error:', error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Get user's payment requests
+export const getUserPaymentRequests = async (req, res) => {
+    try {
+        const userData = req.user
+
+        const requests = await PaymentRequest.find({ userId: userData._id })
+            .populate('courseId', 'courseTitle courseThumbnail')
+            .sort({ createdAt: -1 })
+
+        res.json({ success: true, requests })
+
+    } catch (error) {
+        console.error('Get payment requests error:', error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Admin: Get all pending payment requests
+export const getPendingPaymentRequests = async (req, res) => {
+    try {
+        const requests = await PaymentRequest.find({ status: 'pending' })
+            .populate('userId', 'firstName lastName email phone')
+            .populate('courseId', 'courseTitle coursePrice')
+            .sort({ createdAt: -1 })
+
+        res.json({ success: true, requests })
+
+    } catch (error) {
+        console.error('Get pending requests error:', error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Admin: Approve payment request
+export const approvePaymentRequest = async (req, res) => {
+    try {
+        const { requestId } = req.params
+        const { adminNote } = req.body
+        const adminUser = req.user
+
+        const paymentRequest = await PaymentRequest.findById(requestId)
+        if (!paymentRequest) {
+            return res.json({ success: false, message: "Demande non trouvée" })
+        }
+
+        if (paymentRequest.status !== 'pending') {
+            return res.json({ success: false, message: "Cette demande a déjà été traitée" })
+        }
+
+        // Get commission settings
+        const platformCommission = await Settings.getSetting('platformCommission') || 20
+        const educatorShare = await Settings.getSetting('educatorShare') || 80
+
+        // Calculate earnings
+        const totalAmount = paymentRequest.amount
+        const platformEarnings = (totalAmount * platformCommission / 100).toFixed(2)
+        const educatorEarnings = (totalAmount * educatorShare / 100).toFixed(2)
+
+        // Update payment request
+        paymentRequest.status = 'approved'
+        paymentRequest.adminNote = adminNote || ''
+        paymentRequest.approvedBy = adminUser._id
+        paymentRequest.approvedAt = new Date()
+        paymentRequest.platformCommission = parseFloat(platformEarnings)
+        paymentRequest.educatorEarnings = parseFloat(educatorEarnings)
+        await paymentRequest.save()
+
+        // Enroll user in course
+        const user = await User.findById(paymentRequest.userId)
+        const course = await Course.findById(paymentRequest.courseId).populate('educator')
+
+        if (user && course) {
+            if (!user.enrolledCourses.includes(course._id)) {
+                user.enrolledCourses.push(course._id)
+                await user.save()
+            }
+            if (!course.enrolledStudents.includes(user._id)) {
+                course.enrolledStudents.push(user._id)
+                await course.save()
+            }
+
+            // Credit educator's balance
+            if (course.educator) {
+                const educator = await User.findById(course.educator._id || course.educator)
+                if (educator) {
+                    educator.balance = (educator.balance || 0) + parseFloat(educatorEarnings)
+                    educator.totalEarnings = (educator.totalEarnings || 0) + parseFloat(educatorEarnings)
+                    await educator.save()
+                }
+            }
+        }
+
+        // Create purchase record with commission info
+        await Purchase.create({
+            courseId: paymentRequest.courseId,
+            userId: paymentRequest.userId,
+            amount: paymentRequest.amount,
+            platformCommission: parseFloat(platformEarnings),
+            educatorEarnings: parseFloat(educatorEarnings),
+            status: 'completed'
+        })
+
+        // Notify student that payment was approved
+        await createNotification(
+            paymentRequest.userId,
+            'payment_approved',
+            'Paiement approuvé !',
+            `Votre paiement pour "${course.courseTitle}" a été approuvé. Vous pouvez maintenant accéder au cours.`,
+            `/player/${course._id}`,
+            { courseId: course._id }
+        )
+
+        // Notify educator about new enrollment and earnings
+        if (course.educator) {
+            const educatorId = course.educator._id || course.educator
+            await createNotification(
+                educatorId,
+                'new_enrollment',
+                'Nouvelle inscription !',
+                `${user.firstName} ${user.lastName} s'est inscrit à "${course.courseTitle}". Vous avez gagné ${educatorEarnings} ${process.env.CURRENCY || 'USD'}.`,
+                '/educator/earnings',
+                { courseId: course._id, earnings: educatorEarnings }
+            )
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Paiement approuvé et utilisateur inscrit au cours",
+            earnings: {
+                total: totalAmount,
+                platform: platformEarnings,
+                educator: educatorEarnings
             }
         })
 
-        res.json({success: true, session_url: session.url})
+    } catch (error) {
+        console.error('Approve payment error:', error)
+        res.json({ success: false, message: error.message })
+    }
+}
 
+// Admin: Reject payment request
+export const rejectPaymentRequest = async (req, res) => {
+    try {
+        const { requestId } = req.params
+        const { adminNote } = req.body
+        const adminUser = req.user
+
+        const paymentRequest = await PaymentRequest.findById(requestId)
+        if (!paymentRequest) {
+            return res.json({ success: false, message: "Demande non trouvée" })
+        }
+
+        if (paymentRequest.status !== 'pending') {
+            return res.json({ success: false, message: "Cette demande a déjà été traitée" })
+        }
+
+        paymentRequest.status = 'rejected'
+        paymentRequest.adminNote = adminNote || 'Paiement non vérifié'
+        paymentRequest.approvedBy = adminUser._id
+        paymentRequest.approvedAt = new Date()
+        await paymentRequest.save()
+
+        // Notify student that payment was rejected
+        const course = await Course.findById(paymentRequest.courseId)
+        await createNotification(
+            paymentRequest.userId,
+            'payment_rejected',
+            'Paiement rejeté',
+            `Votre demande de paiement pour "${course?.courseTitle || 'ce cours'}" a été rejetée. Raison: ${adminNote || 'Paiement non vérifié'}`,
+            '/my-enrollments',
+            { courseId: paymentRequest.courseId }
+        )
+
+        res.json({ 
+            success: true, 
+            message: "Demande de paiement rejetée" 
+        })
 
     } catch (error) {
-        res.json({success: false, message:error.message})
+        console.error('Reject payment error:', error)
+        res.json({ success: false, message: error.message })
     }
 }
 
@@ -481,11 +770,9 @@ export const purchaseCourse = async (req,res) => {
 
 export const updateUserCourseProgress = async(req,res)=>{
     try {
-        const userId = req.user.id // Using Supabase user ID
+        const user = req.user
         const {courseId, lectureId} = req.body
         
-        // Get the MongoDB user ID
-        const user = await User.findOne({ supabaseId: userId })
         if (!user) {
             return res.json({success: false, message: "User not found"})
         }
@@ -519,11 +806,9 @@ export const updateUserCourseProgress = async(req,res)=>{
 
 export const getUserCourseProgress = async(req,res)=>{
     try {
-        const userId = req.user.id // Using Supabase user ID
+        const user = req.user
         const {courseId} = req.body
         
-        // Get the MongoDB user ID
-        const user = await User.findOne({ supabaseId: userId })
         if (!user) {
             return res.json({success: false, message: "User not found"})
         }
@@ -540,11 +825,9 @@ export const getUserCourseProgress = async(req,res)=>{
 
 export const addUserRating = async (req,res)=>{
     try {
-        const userId = req.user.id // Using Supabase user ID
+        const user = req.user
         const {courseId, rating} = req.body
         
-        // Get the MongoDB user ID
-        const user = await User.findOne({ supabaseId: userId })
         if (!user) {
             return res.json({success: false, message: "User not found"})
         }
@@ -580,5 +863,51 @@ export const addUserRating = async (req,res)=>{
 
     } catch (error) {
         res.json({success: false, message: error.message});
+    }
+}
+
+// ============ WISHLIST FUNCTIONS ============
+
+// Get user wishlist
+export const getWishlist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).populate('wishlist')
+        res.json({ success: true, wishlist: user.wishlist || [] })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Add course to wishlist
+export const addToWishlist = async (req, res) => {
+    try {
+        const { courseId } = req.params
+        const user = await User.findById(req.user._id)
+
+        if (user.wishlist.includes(courseId)) {
+            return res.json({ success: false, message: 'Cours déjà dans les favoris' })
+        }
+
+        user.wishlist.push(courseId)
+        await user.save()
+
+        res.json({ success: true, message: 'Ajouté aux favoris' })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Remove course from wishlist
+export const removeFromWishlist = async (req, res) => {
+    try {
+        const { courseId } = req.params
+        const user = await User.findById(req.user._id)
+
+        user.wishlist = user.wishlist.filter(id => id.toString() !== courseId)
+        await user.save()
+
+        res.json({ success: true, message: 'Retiré des favoris' })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
     }
 }

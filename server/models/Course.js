@@ -26,10 +26,20 @@ const courseSchema = new mongoose.Schema({
     courseDescription: {type: String, required: true},
     courseThumbnail: {type: String},
     coursePrice: {type: Number, required: true},
-    // isPublished: {type: Boolean, default: true},
     isPublished: { type: Boolean, default: true },
-
-    discount: {type: Number, required: true, min:0, max: 100},
+    discount: {type: Number, default: 0, min: 0, max: 100},
+    category: {
+        type: String, 
+        enum: ['development', 'business', 'design', 'marketing', 'photography', 'music', 'health', 'finance', 'lifestyle', 'other'],
+        default: 'other'
+    },
+    level: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced', 'all'],
+        default: 'all'
+    },
+    language: {type: String, default: 'Français'},
+    previewVideo: {type: String, default: ''}, // URL vidéo aperçu gratuit
     courseContent: [chapterSchema],
     courseRatings:[
         {userId: {type: String}, rating: {type: Number, min: 1, max: 5}}
