@@ -35,7 +35,7 @@ const Companies = () => {
           </h2>
           
           <p className='text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed'>
-            Rejoignez des milliers de professionnels d'entreprises de renommée mondiale qui font confiance à LearnHub pour leur parcours d'apprentissage
+            Rejoignez des milliers de professionnels d'entreprises de renommée mondiale qui font confiance à Yekolapour leur parcours d'apprentissage
           </p>
         </motion.div>
 

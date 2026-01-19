@@ -13,6 +13,36 @@ const CoursesList = () => {
 	const [filteredCourse, setFilteredcourse] = useState([]);
 	const [sortBy, setSortBy] = useState('popular');
 	const [priceFilter, setPriceFilter] = useState('all');
+	const [categoryFilter, setCategoryFilter] = useState('all');
+	const [levelFilter, setLevelFilter] = useState('all');
+	const [ratingFilter, setRatingFilter] = useState(0);
+	const [showFilters, setShowFilters] = useState(false);
+
+	const categories = [
+		{ id: 'all', label: 'Toutes catégories' },
+		{ id: 'development', label: '💻 Développement' },
+		{ id: 'business', label: '💼 Business' },
+		{ id: 'design', label: '🎨 Design' },
+		{ id: 'marketing', label: '📢 Marketing' },
+		{ id: 'photography', label: '📷 Photographie' },
+		{ id: 'music', label: '🎵 Musique' },
+		{ id: 'health', label: '🏥 Santé' },
+		{ id: 'finance', label: '💰 Finance' },
+		{ id: 'lifestyle', label: '🌟 Lifestyle' },
+		{ id: 'other', label: '📚 Autre' }
+	];
+
+	const levels = [
+		{ id: 'all', label: 'Tous niveaux' },
+		{ id: 'beginner', label: '🟢 Débutant' },
+		{ id: 'intermediate', label: '🟡 Intermédiaire' },
+		{ id: 'advanced', label: '🔴 Avancé' }
+	];
+
+	const calculateCourseRating = (course) => {
+		if (!course.courseRatings?.length) return 0;
+		return course.courseRatings.reduce((acc, r) => acc + r.rating, 0) / course.courseRatings.length;
+	};
 
 	useEffect(() => {
 		if (allCourses && allCourses.length > 0) {
@@ -32,6 +62,21 @@ const CoursesList = () => {
 				tempCourses = tempCourses.filter(c => (c.coursePrice - c.discount * c.coursePrice / 100) > 0);
 			}
 
+			// Category filter
+			if (categoryFilter !== 'all') {
+				tempCourses = tempCourses.filter(c => c.category === categoryFilter);
+			}
+
+			// Level filter
+			if (levelFilter !== 'all') {
+				tempCourses = tempCourses.filter(c => c.level === levelFilter || c.level === 'all');
+			}
+
+			// Rating filter
+			if (ratingFilter > 0) {
+				tempCourses = tempCourses.filter(c => calculateCourseRating(c) >= ratingFilter);
+			}
+
 			// Sort
 			switch (sortBy) {
 				case 'popular':
@@ -47,11 +92,7 @@ const CoursesList = () => {
 					tempCourses.sort((a, b) => (b.coursePrice - b.discount * b.coursePrice / 100) - (a.coursePrice - a.discount * a.coursePrice / 100));
 					break;
 				case 'rating':
-					tempCourses.sort((a, b) => {
-						const ratingA = a.courseRatings?.length ? a.courseRatings.reduce((acc, r) => acc + r.rating, 0) / a.courseRatings.length : 0;
-						const ratingB = b.courseRatings?.length ? b.courseRatings.reduce((acc, r) => acc + r.rating, 0) / b.courseRatings.length : 0;
-						return ratingB - ratingA;
-					});
+					tempCourses.sort((a, b) => calculateCourseRating(b) - calculateCourseRating(a));
 					break;
 				default:
 					break;
@@ -59,7 +100,7 @@ const CoursesList = () => {
 
 			setFilteredcourse(tempCourses);
 		}
-	}, [allCourses, input, sortBy, priceFilter]);
+	}, [allCourses, input, sortBy, priceFilter, categoryFilter, levelFilter, ratingFilter]);
 
 	return (
 		<>
@@ -116,10 +157,11 @@ const CoursesList = () => {
 
 				{/* Filters Bar */}
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
-					<div className="flex flex-col sm:flex-row gap-4">
+					{/* Main filters row */}
+					<div className="flex flex-wrap items-center gap-4 mb-4">
 						{/* Sort */}
 						<div className="flex items-center gap-2">
-							<label className="text-sm font-medium text-gray-700">Trier par:</label>
+							<label className="text-sm font-medium text-gray-700">Trier:</label>
 							<select 
 								value={sortBy}
 								onChange={(e) => setSortBy(e.target.value)}
@@ -133,30 +175,141 @@ const CoursesList = () => {
 							</select>
 						</div>
 
-						{/* Price Filter */}
+						{/* Category */}
 						<div className="flex items-center gap-2">
-							<label className="text-sm font-medium text-gray-700">Prix:</label>
-							<div className="flex gap-2">
-								{[
-									{ id: 'all', label: 'Tous' },
-									{ id: 'free', label: 'Gratuits' },
-									{ id: 'paid', label: 'Payants' },
-								].map((filter) => (
-									<button
-										key={filter.id}
-										onClick={() => setPriceFilter(filter.id)}
-										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-											priceFilter === filter.id
-												? 'bg-blue-600 text-white'
-												: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-										}`}
-									>
-										{filter.label}
-									</button>
+							<select 
+								value={categoryFilter}
+								onChange={(e) => setCategoryFilter(e.target.value)}
+								className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							>
+								{categories.map((cat) => (
+									<option key={cat.id} value={cat.id}>{cat.label}</option>
 								))}
+							</select>
+						</div>
+
+						{/* Level */}
+						<div className="flex items-center gap-2">
+							<select 
+								value={levelFilter}
+								onChange={(e) => setLevelFilter(e.target.value)}
+								className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							>
+								{levels.map((lvl) => (
+									<option key={lvl.id} value={lvl.id}>{lvl.label}</option>
+								))}
+							</select>
+						</div>
+
+						{/* Toggle more filters */}
+						<button
+							onClick={() => setShowFilters(!showFilters)}
+							className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50"
+						>
+							<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+							</svg>
+							Plus de filtres
+						</button>
+
+						{/* Clear filters */}
+						{(categoryFilter !== 'all' || levelFilter !== 'all' || priceFilter !== 'all' || ratingFilter > 0) && (
+							<button
+								onClick={() => {
+									setCategoryFilter('all');
+									setLevelFilter('all');
+									setPriceFilter('all');
+									setRatingFilter(0);
+								}}
+								className="text-sm text-red-600 hover:text-red-700 font-medium"
+							>
+								✕ Effacer les filtres
+							</button>
+						)}
+					</div>
+
+					{/* Expanded filters */}
+					{showFilters && (
+						<div className="pt-4 border-t border-gray-100 space-y-4">
+							{/* Price Filter */}
+							<div className="flex flex-wrap items-center gap-2">
+								<label className="text-sm font-medium text-gray-700 w-16">Prix:</label>
+								<div className="flex gap-2">
+									{[
+										{ id: 'all', label: 'Tous' },
+										{ id: 'free', label: '🆓 Gratuits' },
+										{ id: 'paid', label: '💳 Payants' },
+									].map((filter) => (
+										<button
+											key={filter.id}
+											onClick={() => setPriceFilter(filter.id)}
+											className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+												priceFilter === filter.id
+													? 'bg-blue-600 text-white'
+													: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+											}`}
+										>
+											{filter.label}
+										</button>
+									))}
+								</div>
+							</div>
+
+							{/* Rating Filter */}
+							<div className="flex flex-wrap items-center gap-2">
+								<label className="text-sm font-medium text-gray-700 w-16">Note:</label>
+								<div className="flex gap-2">
+									{[0, 3, 3.5, 4, 4.5].map((rating) => (
+										<button
+											key={rating}
+											onClick={() => setRatingFilter(rating)}
+											className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
+												ratingFilter === rating
+													? 'bg-yellow-500 text-white'
+													: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+											}`}
+										>
+											{rating === 0 ? 'Tous' : (
+												<>
+													<span className="text-yellow-500">★</span> {rating}+
+												</>
+											)}
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
-					</div>
+					)}
+
+					{/* Active filters tags */}
+					{(categoryFilter !== 'all' || levelFilter !== 'all' || priceFilter !== 'all' || ratingFilter > 0) && (
+						<div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+							{categoryFilter !== 'all' && (
+								<span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+									{categories.find(c => c.id === categoryFilter)?.label}
+									<button onClick={() => setCategoryFilter('all')} className="hover:text-blue-900">✕</button>
+								</span>
+							)}
+							{levelFilter !== 'all' && (
+								<span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+									{levels.find(l => l.id === levelFilter)?.label}
+									<button onClick={() => setLevelFilter('all')} className="hover:text-green-900">✕</button>
+								</span>
+							)}
+							{priceFilter !== 'all' && (
+								<span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+									{priceFilter === 'free' ? 'Gratuits' : 'Payants'}
+									<button onClick={() => setPriceFilter('all')} className="hover:text-purple-900">✕</button>
+								</span>
+							)}
+							{ratingFilter > 0 && (
+								<span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">
+									★ {ratingFilter}+
+									<button onClick={() => setRatingFilter(0)} className="hover:text-yellow-900">✕</button>
+								</span>
+							)}
+						</div>
+					)}
 				</div>
 
 				{/* Courses Grid */}

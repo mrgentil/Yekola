@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "gyan",
   "license": "ISC",
-  "description": "LearnHub LMS - A Modern Learning Management System",
+  "description": "YekolaLMS - A Modern Learning Management System",
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
     "bcryptjs": "^3.0.3",

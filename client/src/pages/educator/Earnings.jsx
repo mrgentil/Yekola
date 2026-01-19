@@ -8,6 +8,19 @@ const Earnings = () => {
   const { backendUrl, getAccessToken, currency } = useContext(AppContext)
   const [earnings, setEarnings] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [payoutRequests, setPayoutRequests] = useState([])
+  const [showPayoutModal, setShowPayoutModal] = useState(false)
+  const [payoutForm, setPayoutForm] = useState({
+    amount: '',
+    paymentMethod: 'mobile_money',
+    mobileMoneyProvider: 'mpesa',
+    phoneNumber: '',
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
+    paypalEmail: ''
+  })
+  const [submitting, setSubmitting] = useState(false)
 
   const fetchEarnings = async () => {
     try {
@@ -25,8 +38,56 @@ const Earnings = () => {
     }
   }
 
+  const fetchPayoutRequests = async () => {
+    try {
+      const token = await getAccessToken()
+      const { data } = await axios.get(`${backendUrl}/api/payout/my-requests`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (data.success) {
+        setPayoutRequests(data.requests)
+      }
+    } catch (error) {
+      console.error('Error fetching payout requests:', error)
+    }
+  }
+
+  const handlePayoutSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      const token = await getAccessToken()
+      const { data } = await axios.post(`${backendUrl}/api/payout/request`, payoutForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (data.success) {
+        toast.success('Demande de retrait soumise avec succès!')
+        setShowPayoutModal(false)
+        setPayoutForm({
+          amount: '',
+          paymentMethod: 'mobile_money',
+          mobileMoneyProvider: 'mpesa',
+          phoneNumber: '',
+          bankName: '',
+          accountNumber: '',
+          accountName: '',
+          paypalEmail: ''
+        })
+        fetchEarnings()
+        fetchPayoutRequests()
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la soumission')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   useEffect(() => {
     fetchEarnings()
+    fetchPayoutRequests()
   }, [])
 
   if (loading) return <Loading />
@@ -154,12 +215,68 @@ const Earnings = () => {
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
-                onClick={() => toast.info('Fonctionnalité de retrait bientôt disponible')}
+                onClick={() => setShowPayoutModal(true)}
               >
                 {earnings.canRequestPayout ? 'Demander un retrait' : 'Solde insuffisant'}
               </button>
             </div>
           </div>
+
+          {/* Payout Requests History */}
+          {payoutRequests.length > 0 && (
+            <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8'>
+              <h2 className='text-xl font-bold text-gray-900 mb-4'>📜 Historique des retraits</h2>
+              <div className='overflow-x-auto'>
+                <table className='w-full'>
+                  <thead>
+                    <tr className='border-b border-gray-100'>
+                      <th className='text-left py-3 px-4 text-sm font-medium text-gray-500'>Date</th>
+                      <th className='text-left py-3 px-4 text-sm font-medium text-gray-500'>Montant</th>
+                      <th className='text-left py-3 px-4 text-sm font-medium text-gray-500'>Méthode</th>
+                      <th className='text-left py-3 px-4 text-sm font-medium text-gray-500'>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payoutRequests.map((request) => (
+                      <tr key={request._id} className='border-b border-gray-50 hover:bg-gray-50'>
+                        <td className='py-3 px-4'>
+                          <span className='text-gray-600 text-sm'>
+                            {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+                          </span>
+                        </td>
+                        <td className='py-3 px-4'>
+                          <span className='font-bold text-gray-900'>{currency} {request.amount.toFixed(2)}</span>
+                        </td>
+                        <td className='py-3 px-4'>
+                          <span className='text-gray-600'>
+                            {request.paymentMethod === 'mobile_money' && `${request.mobileMoneyProvider?.toUpperCase()} - ${request.phoneNumber}`}
+                            {request.paymentMethod === 'bank_transfer' && `${request.bankName} - ${request.accountNumber}`}
+                            {request.paymentMethod === 'paypal' && request.paypalEmail}
+                          </span>
+                        </td>
+                        <td className='py-3 px-4'>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            request.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+                            request.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {request.status === 'pending' && '⏳ En attente'}
+                            {request.status === 'processing' && '🔄 En traitement'}
+                            {request.status === 'completed' && '✅ Complété'}
+                            {request.status === 'rejected' && '❌ Rejeté'}
+                          </span>
+                          {request.adminNote && request.status === 'rejected' && (
+                            <p className='text-xs text-red-500 mt-1'>{request.adminNote}</p>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Recent Transactions */}
           <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-6'>
@@ -206,6 +323,175 @@ const Earnings = () => {
             )}
           </div>
         </>
+      )}
+
+      {/* Payout Modal */}
+      {showPayoutModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto'>
+            <div className='p-6 border-b border-gray-100'>
+              <div className='flex items-center justify-between'>
+                <h2 className='text-xl font-bold text-gray-900'>💸 Demande de retrait</h2>
+                <button 
+                  onClick={() => setShowPayoutModal(false)}
+                  className='text-gray-400 hover:text-gray-600'
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handlePayoutSubmit} className='p-6 space-y-4'>
+              {/* Amount */}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Montant à retirer ({currency})
+                </label>
+                <input
+                  type='number'
+                  min={earnings?.minPayout || 50}
+                  max={earnings?.balance || 0}
+                  step='0.01'
+                  value={payoutForm.amount}
+                  onChange={(e) => setPayoutForm({...payoutForm, amount: e.target.value})}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                  placeholder={`Min: ${earnings?.minPayout || 50}`}
+                  required
+                />
+                <p className='text-xs text-gray-500 mt-1'>
+                  Disponible: {currency} {earnings?.balance?.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Méthode de paiement
+                </label>
+                <select
+                  value={payoutForm.paymentMethod}
+                  onChange={(e) => setPayoutForm({...payoutForm, paymentMethod: e.target.value})}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                >
+                  <option value='mobile_money'>📱 Mobile Money</option>
+                  <option value='bank_transfer'>🏦 Virement bancaire</option>
+                  <option value='paypal'>💳 PayPal</option>
+                </select>
+              </div>
+
+              {/* Mobile Money Fields */}
+              {payoutForm.paymentMethod === 'mobile_money' && (
+                <>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Fournisseur
+                    </label>
+                    <select
+                      value={payoutForm.mobileMoneyProvider}
+                      onChange={(e) => setPayoutForm({...payoutForm, mobileMoneyProvider: e.target.value})}
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                    >
+                      <option value='mpesa'>M-Pesa</option>
+                      <option value='orange_money'>Orange Money</option>
+                      <option value='airtel_money'>Airtel Money</option>
+                      <option value='mtn_money'>MTN Money</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Numéro de téléphone
+                    </label>
+                    <input
+                      type='tel'
+                      value={payoutForm.phoneNumber}
+                      onChange={(e) => setPayoutForm({...payoutForm, phoneNumber: e.target.value})}
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                      placeholder='+243 XXX XXX XXX'
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Bank Transfer Fields */}
+              {payoutForm.paymentMethod === 'bank_transfer' && (
+                <>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Nom de la banque
+                    </label>
+                    <input
+                      type='text'
+                      value={payoutForm.bankName}
+                      onChange={(e) => setPayoutForm({...payoutForm, bankName: e.target.value})}
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                      placeholder='Ex: Rawbank, Equity Bank...'
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Numéro de compte
+                    </label>
+                    <input
+                      type='text'
+                      value={payoutForm.accountNumber}
+                      onChange={(e) => setPayoutForm({...payoutForm, accountNumber: e.target.value})}
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                      placeholder='XXXX-XXXX-XXXX'
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Nom du titulaire
+                    </label>
+                    <input
+                      type='text'
+                      value={payoutForm.accountName}
+                      onChange={(e) => setPayoutForm({...payoutForm, accountName: e.target.value})}
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                      placeholder='Nom complet'
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* PayPal Fields */}
+              {payoutForm.paymentMethod === 'paypal' && (
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Email PayPal
+                  </label>
+                  <input
+                    type='email'
+                    value={payoutForm.paypalEmail}
+                    onChange={(e) => setPayoutForm({...payoutForm, paypalEmail: e.target.value})}
+                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                    placeholder='email@paypal.com'
+                    required
+                  />
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div className='pt-4'>
+                <button
+                  type='submit'
+                  disabled={submitting}
+                  className='w-full bg-green-600 text-white py-3 rounded-xl font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400'
+                >
+                  {submitting ? '⏳ Envoi en cours...' : '✅ Soumettre la demande'}
+                </button>
+              </div>
+
+              <p className='text-xs text-gray-500 text-center'>
+                Votre demande sera traitée dans un délai de 1 à 3 jours ouvrables.
+              </p>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

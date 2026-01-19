@@ -85,7 +85,7 @@ const SignUp = () => {
             Créer votre compte
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Rejoignez LearnHub et commencez votre parcours d'apprentissage
+            Rejoignez Yekolaet commencez votre parcours d'apprentissage
           </p>
         </div>
         

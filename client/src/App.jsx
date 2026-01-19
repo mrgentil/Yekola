@@ -8,6 +8,7 @@ import Player from './pages/student/Player'
 import Payment from './pages/student/Payment'
 import Profile from './pages/student/Profile'
 import Wishlist from './pages/student/Wishlist'
+import Certificate from './pages/student/Certificate'
 import Loading from './components/student/Loading'
 import Educator from './pages/educator/Educator'
 import Dashboard from './pages/educator/Dashboard'
@@ -16,6 +17,7 @@ import MyCourses from './pages/educator/MyCourses'
 import StudentsEnrolled from './pages/educator/StudentsEnrolled'
 import PaymentManagement from './pages/educator/PaymentManagement'
 import Earnings from './pages/educator/Earnings'
+import QuizManager from './pages/educator/QuizManager'
 import Navbar from './components/student/Navbar'
 import SignIn from './components/auth/SignIn'
 import SignUp from './components/auth/SignUp'
@@ -33,6 +35,7 @@ import AdminPayments from './pages/admin/AdminPayments'
 import AdminCoupons from './pages/admin/AdminCoupons'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminSiteSettings from './pages/admin/AdminSiteSettings'
+import AdminPayouts from './pages/admin/AdminPayouts'
 
 
 const App = () => {
@@ -55,6 +58,7 @@ const App = () => {
         <Route path='/profile' element={<Profile/>} />
         <Route path='/wishlist' element={<Wishlist/>} />
         <Route path='/player/:courseId' element={<Player/>} />
+        <Route path='/certificate/:certificateId' element={<Certificate/>} />
         <Route path='/loading/:path' element={<Loading/>} />
 
         {/* Authentication Routes */}
@@ -73,6 +77,7 @@ const App = () => {
             <Route path='student-enrolled' element={<StudentsEnrolled />} />
             <Route path='payments' element={<PaymentManagement />} />
             <Route path='earnings' element={<Earnings />} />
+            <Route path='quizzes' element={<QuizManager />} />
         </Route>
 
         {/* Admin Routes */}
@@ -84,6 +89,7 @@ const App = () => {
             <Route path='coupons' element={<AdminCoupons />} />
             <Route path='settings' element={<AdminSettings />} />
             <Route path='site' element={<AdminSiteSettings />} />
+            <Route path='payouts' element={<AdminPayouts />} />
         </Route>
 
       </Routes>

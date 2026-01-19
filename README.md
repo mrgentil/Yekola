@@ -1,7 +1,7 @@
 
 <div align="center">
   
-# 🎓 LearnHub LMS
+# 🎓 YekolaLMS
 
 **A Modern Learning Management System**
 
@@ -21,7 +21,7 @@
 
 ## ✨ Overview
 
-LearnHub LMS is a full-stack learning management system that revolutionizes online education. It provides educators with powerful tools to create and manage courses, while offering students an engaging learning experience with progress tracking, video streaming, and interactive features.
+YekolaLMS is a full-stack learning management system that revolutionizes online education. It provides educators with powerful tools to create and manage courses, while offering students an engaging learning experience with progress tracking, video streaming, and interactive features.
 
 ### 🌟 Key Features
 

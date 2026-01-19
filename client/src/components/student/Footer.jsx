@@ -44,7 +44,7 @@ const Footer = () => {
 							</div>
 						</div>
 						<p className="text-gray-300 leading-relaxed mb-6 max-w-md">
-							{siteSettings.footerAbout || "LearnHub LMS révolutionne l'éducation en la rendant accessible et engageante. Nous connectons des étudiants passionnés avec des éducateurs experts à travers des cours de qualité, des outils interactifs et un design intuitif qui favorise l'apprentissage."}
+							{siteSettings.footerAbout || "YekolaLMS révolutionne l'éducation en la rendant accessible et engageante. Nous connectons des étudiants passionnés avec des éducateurs experts à travers des cours de qualité, des outils interactifs et un design intuitif qui favorise l'apprentissage."}
 						</p>
 						<div className="flex items-center space-x-4">
 							<div className="flex items-center space-x-2 text-sm text-gray-300">
@@ -158,7 +158,7 @@ const Footer = () => {
 							<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 								<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 							</svg>
-							<span>{siteSettings.copyrightText || 'Copyright 2025 © LearnHub par GPS. Tous droits réservés.'}</span>
+							<span>{siteSettings.copyrightText || 'Copyright 2025 © Yekolapar GPS. Tous droits réservés.'}</span>
 						</div>
 						
 						<div className="flex items-center space-x-6 text-sm text-gray-400">

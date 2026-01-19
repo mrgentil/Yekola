@@ -35,6 +35,7 @@ const AdminSidebar = () => {
     { name: 'Utilisateurs', path: '/admin/users', icon: '👥' },
     { name: 'Cours', path: '/admin/courses', icon: '📚' },
     { name: 'Paiements', path: '/admin/payments', icon: '💳', badge: pendingPayments },
+    { name: 'Retraits', path: '/admin/payouts', icon: '💸' },
     { name: 'Coupons', path: '/admin/coupons', icon: '🎟️' },
     { name: 'Personnalisation', path: '/admin/site', icon: '🎨' },
     { name: 'Paramètres', path: '/admin/settings', icon: '⚙️' },

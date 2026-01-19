@@ -11,6 +11,10 @@ import adminRouter from './routes/adminRoutes.js';
 import couponRouter from './routes/couponRoutes.js';
 import settingsRouter from './routes/settingsRoutes.js';
 import notificationRouter from './routes/notificationRoutes.js';
+import payoutRouter from './routes/payoutRoutes.js';
+import certificateRouter from './routes/certificateRoutes.js';
+import discussionRouter from './routes/discussionRoutes.js';
+import quizRouter from './routes/quizRoutes.js';
 
 // initialize express 
 const app = express();
@@ -24,7 +28,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.get('/', (req,res)=>{res.send("LearnHub API is working fine!")})
+app.get('/', (req,res)=>{res.send("YekolaAPI is working fine!")})
 app.use('/api/educator', educatorRouter);
 app.use('/api/course', courseRouter);
 app.use('/api/user', userRouter);
@@ -32,6 +36,10 @@ app.use('/api/admin', adminRouter);
 app.use('/api/coupon', couponRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/payout', payoutRouter);
+app.use('/api/certificate', certificateRouter);
+app.use('/api/discussion', discussionRouter);
+app.use('/api/quiz', quizRouter);
 app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks);
 
 // port

@@ -586,7 +586,7 @@ const AdminSiteSettings = () => {
                 onChange={(e) => setFormData({...formData, footerAbout: e.target.value})}
                 className='w-full px-4 py-3 border border-gray-200 rounded-xl'
                 rows={3}
-                placeholder="LearnHub LMS révolutionne l'éducation..."
+                placeholder="YekolaLMS révolutionne l'éducation..."
               />
             </div>
             

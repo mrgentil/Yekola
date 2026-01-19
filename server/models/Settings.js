@@ -139,7 +139,7 @@ const defaultSettings = {
     
     // Footer
     footerAbout: {
-        value: "LearnHub LMS révolutionne l'éducation en la rendant accessible et engageante.",
+        value: "YekolaLMS révolutionne l'éducation en la rendant accessible et engageante.",
         description: "Texte À propos dans le footer"
     },
     copyrightText: {

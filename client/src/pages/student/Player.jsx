@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { assets } from '../../assets/assets'
 import { AppContext } from '../../context/AppContext'
 import { toast } from 'react-toastify'
@@ -9,9 +9,12 @@ import Rating from '../../components/student/Rating'
 import YouTube from 'react-youtube'
 import humanizeDuration from 'humanize-duration'
 import Footer from '../../components/student/Footer'
+import CourseDiscussion from '../../components/student/CourseDiscussion'
+import QuizList from '../../components/student/QuizList'
 
 const Player = () => {
     const { courseId } = useParams()
+    const navigate = useNavigate()
     const {enrolledCourses, calculateChapterTime, backendUrl, getAccessToken, userData, fetchUserEnrolledCourses} = useContext(AppContext)
     const [courseData, setCourseData] = useState(null)
     const [currentLecture, setCurrentLecture] = useState(null)
@@ -19,6 +22,8 @@ const Player = () => {
     const [openSections, setOpenSections] = useState({})
     const [playerData, setPlayerData] = useState(null)
     const [initialRating, setInitialRating] = useState(0)
+    const [showCompletionModal, setShowCompletionModal] = useState(false)
+    const [certificateData, setCertificateData] = useState(null)
 
     const fetchCourseData = async () => {
         try {
@@ -119,10 +124,31 @@ const Player = () => {
         addRating(rating)
     }
 
+    const checkCourseCompletion = async () => {
+        try {
+            const token = await getAccessToken();
+            if (!token) return
+
+            const { data } = await axios.post(`${backendUrl}/api/certificate/check`, {
+                courseId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+
+            if (data.success && data.completed && data.isNewCompletion) {
+                setCertificateData(data.certificate)
+                setShowCompletionModal(true)
+            }
+        } catch (error) {
+            console.error('Check completion error:', error)
+        }
+    }
+
     const markLectureAsCompleted = async (lectureId) => {
         try {
             await updateProgress(lectureId)
             await getProgress()
+            await checkCourseCompletion()
         } catch (error) {
             toast.error('Failed to mark lecture as completed')
         }
@@ -247,6 +273,13 @@ const Player = () => {
               </div>
             </div>
 
+            {/* Quiz Section */}
+            <QuizList courseId={courseId} />
+
+            {/* Q&A Section */}
+            <div className="mt-6">
+              <CourseDiscussion courseId={courseId} lectureId={playerData?.lectureId} />
+            </div>
 
 				</div>
 
@@ -278,6 +311,76 @@ const Player = () => {
         </div>
 			</div>
       <Footer/>
+
+      {/* Completion Modal */}
+      {showCompletionModal && certificateData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden animate-bounce-in">
+            {/* Confetti effect header */}
+            <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 opacity-30">
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute animate-float"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animationDelay: `${Math.random() * 2}s`
+                    }}
+                  >
+                    {['🎉', '🎊', '⭐', '🏆', '✨'][Math.floor(Math.random() * 5)]}
+                  </div>
+                ))}
+              </div>
+              <div className="relative z-10">
+                <div className="text-6xl mb-4">🎓</div>
+                <h2 className="text-3xl font-bold text-white mb-2">Félicitations !</h2>
+                <p className="text-white/90">Vous avez terminé ce cours avec succès</p>
+              </div>
+            </div>
+
+            <div className="p-6 text-center">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 mb-6 border-2 border-yellow-200">
+                <p className="text-gray-600 mb-2">Cours complété</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{certificateData.courseTitle}</h3>
+                <div className="flex justify-center gap-6 text-sm">
+                  <div>
+                    <span className="text-2xl">📚</span>
+                    <p className="text-gray-600">{certificateData.totalLectures} leçons</p>
+                  </div>
+                  <div>
+                    <span className="text-2xl">⏱️</span>
+                    <p className="text-gray-600">{Math.round(certificateData.totalDuration / 60)}h de contenu</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-xl p-4 mb-6 border border-green-200">
+                <p className="text-green-800 font-medium">
+                  🏆 Certificat N° {certificateData.certificateNumber}
+                </p>
+                <p className="text-green-600 text-sm">Votre certificat est prêt à être téléchargé</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCompletionModal(false)}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Continuer
+                </button>
+                <button
+                  onClick={() => navigate(`/certificate/${certificateData._id}`)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-colors font-medium"
+                >
+                  📜 Voir le certificat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 		</>
 	)
 	: <Loading/>;

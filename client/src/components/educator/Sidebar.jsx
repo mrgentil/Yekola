@@ -38,6 +38,7 @@ const Sidebar = () => {
     {name: 'Ajouter un cours', path: '/educator/add-course', icon: assets.add_icon },
     {name: 'Mes cours', path: '/educator/my-courses', icon: assets.my_course_icon },
     {name: 'Étudiants inscrits', path: '/educator/student-enrolled', icon: assets.person_tick_icon, badge: stats.recentEnrollments },
+    {name: 'Quiz', path: '/educator/quizzes', icon: assets.my_course_icon, emoji: '📝' },
     {name: 'Mes revenus', path: '/educator/earnings', icon: assets.dollar_icon || assets.home_icon },
   ]
   
